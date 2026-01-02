@@ -118,7 +118,7 @@ export default function MainPage() {
   //  ROLE-BASED MODULE ACCESS
 
   const roleModulesMap = {
-    1: ['project', 'hr', 'ticket', 'attendance', 'finance', 'vendor'], // Admin
+    1: ['project', 'hr', 'ticket', 'attendance', 'finance', 'vendor','user'], // Admin
     2: ['project', 'hr', 'ticket', 'attendance', 'finance', 'user'], // PM
     3: ['project', 'hr', 'ticket', 'attendance', 'finance', 'user'], // Employee
     4: ['hr', 'ticket', 'attendance', 'finance', 'vendor', 'user'], // HR
