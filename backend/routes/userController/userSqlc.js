@@ -97,9 +97,9 @@ export default {
     };
   },
 
-createUser(data) {
-  return {
-    queryString: `
+  createUser(data) {
+    return {
+      queryString: `
       INSERT INTO tbl_users_management 
       (s_full_name, s_email, s_role, d_joining_date)
       VALUES ($1, $2, $3, $4::date)
@@ -110,13 +110,13 @@ createUser(data) {
         s_role,
         TO_CHAR(d_joining_date, 'YYYY-MM-DD') as d_joining_date;
     `,
-    arr: [data.s_full_name, data.s_email, data.s_role, data.d_joining_date],
-  };
-},
+      arr: [data.s_full_name, data.s_email, data.s_role, data.d_joining_date],
+    };
+  },
 
-getAllUsers() {
-  return {
-    queryString: `
+  getAllUsers() {
+    return {
+      queryString: `
       SELECT 
         n_user_id,
         s_full_name,
@@ -129,13 +129,13 @@ getAllUsers() {
       FROM tbl_users_management 
       ORDER BY n_user_id DESC
     `,
-    arr: [],
-  };
-},
+      arr: [],
+    };
+  },
 
-updateUserDetails(data) {
-  return {
-    queryString: `
+  updateUserDetails(data) {
+    return {
+      queryString: `
       UPDATE tbl_users_management
       SET 
         s_full_name = $1,
@@ -150,71 +150,69 @@ updateUserDetails(data) {
         s_role,
         TO_CHAR(d_joining_date, 'YYYY-MM-DD') as d_joining_date;
     `,
-    arr: [
-      data.s_full_name,
-      data.s_email,
-      data.s_role,
-      data.d_joining_date,
-      data.n_user_id
-    ],
-  };
-},
-deleteUserById(data) {
-  return {
-    queryString: `DELETE FROM tbl_users_management WHERE n_user_id = $1`,
-    arr: [data.n_user_id],
-  };
-},
+      arr: [
+        data.s_full_name,
+        data.s_email,
+        data.s_role,
+        data.d_joining_date,
+        data.n_user_id,
+      ],
+    };
+  },
+  deleteUserById(data) {
+    return {
+      queryString: `DELETE FROM tbl_users_management WHERE n_user_id = $1`,
+      arr: [data.n_user_id],
+    };
+  },
 
-createRole(data) {
-  return {
-    queryString: `
+  createRole(data) {
+    return {
+      queryString: `
       INSERT INTO tbl_role_master (s_role_name)
       VALUES ($1)
       RETURNING *;
     `,
-    arr: [data.s_role_name],
-  };
-},
+      arr: [data.s_role_name],
+    };
+  },
 
-
-
-getAllRoles() {
-  return {
-    queryString: `
+  getAllRoles() {
+    return {
+      queryString: `
       SELECT n_id, s_role_name
       FROM tbl_role_master
       ORDER BY n_id ASC;
     `,
-    arr: [],
-  };
-},
+      arr: [],
+    };
+  },
 
-updateRole(data) {
-  return {
-    queryString: `
+  updateRole(data) {
+    return {
+      queryString: `
       UPDATE tbl_role_master
       SET s_role_name = $1
       WHERE n_id = $2
       RETURNING *;
     `,
-    arr: [data.s_role_name, data.n_id],
-  };
-},
+      arr: [data.s_role_name, data.n_id],
+    };
+  },
 
-deleteRole(data) {
-  return {
-    queryString: `
+  deleteRole(data) {
+    return {
+      queryString: `
       DELETE FROM tbl_role_master
       WHERE n_id = $1;
     `,
-    arr: [data.n_id],
-  };
-},
+      arr: [data.n_id],
+    };
+  },
 
-getAllPermissions() {
+  getAllPermissions() {
     return {
-      queryString: "SELECT * FROM tbl_permission_master ORDER BY n_id ASC;",
+      queryString: 'SELECT * FROM tbl_permission_master ORDER BY n_id ASC;',
       arr: [],
     };
   },
@@ -242,34 +240,34 @@ getAllPermissions() {
     };
   },
 
-deletePermissionAssignments(id) {
-  return {
-    queryString: `DELETE FROM tbl_role_permissions WHERE permission_id = $1`,
-    arr: [id],
-  };
-},
+  deletePermissionAssignments(id) {
+    return {
+      queryString: `DELETE FROM tbl_role_permissions WHERE permission_id = $1`,
+      arr: [id],
+    };
+  },
 
-deletePermission(id) {
-  return {
-    queryString: `DELETE FROM tbl_permission_master WHERE n_id = $1`,
-    arr: [id],
-  };
-},
-assignPermission(data) {
-  return {
-    queryString: `
+  deletePermission(id) {
+    return {
+      queryString: `DELETE FROM tbl_permission_master WHERE n_id = $1`,
+      arr: [id],
+    };
+  },
+  assignPermission(data) {
+    return {
+      queryString: `
       INSERT INTO tbl_role_permissions (role_id, permission_id)
       VALUES ($1, $2)
       RETURNING *;
     `,
-    arr: [data.role_id, data.permission_id],
-  };
-},
-// Add these two methods to your userSqlc.js export default object
+      arr: [data.role_id, data.permission_id],
+    };
+  },
+  // Add these two methods to your userSqlc.js export default object
 
-getPermissionsByRole(data) {
-  return {
-    queryString: `
+  getPermissionsByRole(data) {
+    return {
+      queryString: `
       SELECT 
         rp.id,
         rp.role_id,
@@ -280,19 +278,17 @@ getPermissionsByRole(data) {
       WHERE rp.role_id = $1
       ORDER BY pm.s_permission_name ASC
     `,
-    arr: [data.roleId],
-  };
-},
+      arr: [data.roleId],
+    };
+  },
 
-unassignPermission(data) {
-  return {
-    queryString: `
+  unassignPermission(data) {
+    return {
+      queryString: `
       DELETE FROM tbl_role_permissions 
       WHERE role_id = $1 AND permission_id = $2
     `,
-    arr: [data.role_id, data.permission_id],
-  };
-},
-
-
+      arr: [data.role_id, data.permission_id],
+    };
+  },
 };

@@ -32,22 +32,21 @@ const signRefresh = (payload) =>
 //   }
 // };
 
-
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     const query = userSqlc.deleteUser(id);
     await dbqueryexecute.executeSelectObj(query);
-    res.json({ message: "User deleted successfully" });
+    res.json({ message: 'User deleted successfully' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to delete user" });
+    res.status(500).json({ error: 'Failed to delete user' });
   }
 };
 
 export default {
   // getUsers,
-  
+
   // deleteUser,
   // deleteUser(req, res) {
   //   dbqueryexecute
@@ -68,8 +67,6 @@ export default {
       );
 
       if (result.length === 0) {
-        
-        
         return res.status(404).json({ Mess: 'Email/Password not matched' });
       }
       const userRow = result[0];
@@ -98,7 +95,7 @@ export default {
           maxAge: 7 * 24 * 60 * 60 * 1000,
           sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
           secure: process.env.NODE_ENV === 'production',
-          path:"/",
+          path: '/',
         });
 
         return res.status(200).json({
@@ -113,7 +110,7 @@ export default {
       return res.status(404).json({ Mess: 'Email/Password not matched' });
     } catch (error) {
       console.log(err);
-      
+
       return res.status(500).json(error);
     }
   },
@@ -133,7 +130,7 @@ export default {
               pool,
             );
           }
-        } catch  {
+        } catch {
           // Ignore
         }
       }
@@ -206,7 +203,7 @@ export default {
       );
 
       return res.status(200).json(data);
-    } catch(err) {
+    } catch (err) {
       return res.status(500).json(err);
     }
   },
@@ -223,132 +220,131 @@ export default {
   },
 
   async logout(req, res) {
-  try {
-    const token = req.cookies.jid;
+    try {
+      const token = req.cookies.jid;
 
-    if (token) {
-      try {
-        const decoded = jwt.decode(token);
+      if (token) {
+        try {
+          const decoded = jwt.decode(token);
 
-        if (decoded?.id) {
-          await dbqueryexecute.executeSelectObj(
-            userSqlc.clearRefreshToken({ userId: Number(decoded.id) }),
-            pool
-          );
+          if (decoded?.id) {
+            await dbqueryexecute.executeSelectObj(
+              userSqlc.clearRefreshToken({ userId: Number(decoded.id) }),
+              pool,
+            );
+          }
+        } catch {
+          // ignore decode error
         }
-      } catch {
-        // ignore decode error
       }
+
+      // Clear cookie
+      res.clearCookie('jid', {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        secure: process.env.NODE_ENV === 'production',
+      });
+
+      return res.status(200).json({ message: 'Logged out successfully' });
+    } catch (err) {
+      return res.status(500).json({ message: 'Logout failed', err });
     }
+  },
+  async createUser(req, res) {
+    try {
+      const { s_full_name, s_email, s_role, d_joining_date } = req.body;
 
-    // Clear cookie
-    res.clearCookie("jid", {
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-    });
+      // 🔒 Basic validation
+      if (!s_full_name || !s_email || !s_role || !d_joining_date) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
 
-    return res.status(200).json({ message: "Logged out successfully" });
-  } catch (err) {
-    return res.status(500).json({ message: "Logout failed", err });
-  }
-}
-,
-async createUser(req, res) {
-  try {
-    const { s_full_name, s_email, s_role , d_joining_date} = req.body;
+      // Build SQL query
+      const query = userSqlc.createUser({
+        s_full_name,
+        s_email,
+        s_role,
+        d_joining_date,
+      });
 
-    // 🔒 Basic validation
-    if (!s_full_name || !s_email || !s_role || !d_joining_date) {
-      return res.status(400).json({ error: "All fields are required" });
+      // 🔥 IMPORTANT: pass pool as 2nd argument
+      const result = await dbqueryexecute.executeSelectObj(query, pool);
+
+      res.status(201).json({
+        message: 'User created successfully',
+        data: result,
+      });
+    } catch (err) {
+      console.error('CREATE USER ERROR:', err);
+      res.status(500).json({ error: 'Failed to create user' });
     }
+  },
+  async getUsers(req, res) {
+    try {
+      const result = await dbqueryexecute.executeSelectObj(
+        userSqlc.getAllUsers(),
+        pool,
+      );
 
-    // Build SQL query
-    const query = userSqlc.createUser({
-      s_full_name,
-      s_email,
-      s_role,
-      d_joining_date,
-    });
-
-    // 🔥 IMPORTANT: pass pool as 2nd argument
-    const result = await dbqueryexecute.executeSelectObj(query, pool);
-
-    res.status(201).json({
-      message: "User created successfully",
-      data: result,
-    });
-
-  } catch (err) {
-    console.error("CREATE USER ERROR:", err);
-    res.status(500).json({ error: "Failed to create user" });
-  }
-},
-async getUsers (req, res) {
-  try {
-    const result = await dbqueryexecute.executeSelectObj(
-      userSqlc.getAllUsers(),
-      pool
-    );
-
-    res.status(200).json(result); // <-- VERY IMPORTANT
-  } catch (err) {
-    console.error("GET USERS ERROR:", err);
-    res.status(500).json({ error: "Failed to fetch users" });
-  }
-},
-async updateUserDetails(req, res) {
-  try {
-    const { n_user_id, s_full_name, s_email, s_role, d_joining_date } = req.body;
-
-    if (!n_user_id) {
-      return res.status(400).json({ error: "User ID is required" });
+      res.status(200).json(result); // <-- VERY IMPORTANT
+    } catch (err) {
+      console.error('GET USERS ERROR:', err);
+      res.status(500).json({ error: 'Failed to fetch users' });
     }
+  },
+  async updateUserDetails(req, res) {
+    try {
+      const { n_user_id, s_full_name, s_email, s_role, d_joining_date } =
+        req.body;
 
-    const query = userSqlc.updateUserDetails({
-      n_user_id,
-      s_full_name,
-      s_email,
-      s_role,
-      d_joining_date,
-    });
+      if (!n_user_id) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
 
-    const result = await dbqueryexecute.executeSelectObj(query, pool);
+      const query = userSqlc.updateUserDetails({
+        n_user_id,
+        s_full_name,
+        s_email,
+        s_role,
+        d_joining_date,
+      });
 
-    res.status(200).json({
-      message: "User updated successfully",
-      data: result,
-    });
-  } catch (error) {
-    console.error("UPDATE USER ERROR:", error);
-    res.status(500).json({ error: "Failed to update user" });
-  }
-},
-async deleteUser(req, res) {
-  try {
-    const { id } = req.params;
+      const result = await dbqueryexecute.executeSelectObj(query, pool);
 
-    if (!id) {
-      return res.status(400).json({ error: "User ID is required" });
+      res.status(200).json({
+        message: 'User updated successfully',
+        data: result,
+      });
+    } catch (error) {
+      console.error('UPDATE USER ERROR:', error);
+      res.status(500).json({ error: 'Failed to update user' });
     }
+  },
+  async deleteUser(req, res) {
+    try {
+      const { id } = req.params;
 
-    const query = userSqlc.deleteUserById({ n_user_id: id });
+      if (!id) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
 
-    await dbqueryexecute.executeSelectObj(query, pool);
+      const query = userSqlc.deleteUserById({ n_user_id: id });
 
-    res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.error("DELETE USER ERROR:", error);
-    res.status(500).json({ error: "Failed to delete user" });
-  }
-},
+      await dbqueryexecute.executeSelectObj(query, pool);
 
-async createRole(req, res) {
+      res.status(200).json({ message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('DELETE USER ERROR:', error);
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  },
+
+  async createRole(req, res) {
     try {
       const { s_role_name } = req.body;
 
       if (!s_role_name || !s_role_name.trim()) {
-        return res.status(400).json({ error: "Role name is required" });
+        return res.status(400).json({ error: 'Role name is required' });
       }
 
       const query = userSqlc.createRole({
@@ -358,224 +354,229 @@ async createRole(req, res) {
       const result = await dbqueryexecute.executeSelectObj(query, pool);
 
       return res.status(201).json({
-        message: "Role created successfully",
+        message: 'Role created successfully',
         data: result,
       });
     } catch (err) {
-      console.error("CREATE ROLE ERROR:", err);
-      return res.status(500).json({ error: "Failed to create role" });
+      console.error('CREATE ROLE ERROR:', err);
+      return res.status(500).json({ error: 'Failed to create role' });
     }
   },
 
-async getRoles(req, res) {
-  try {
-    const result = await dbqueryexecute.executeSelectObj(
-      userSqlc.getAllRoles(),
-      pool
-    );
+  async getRoles(req, res) {
+    try {
+      const result = await dbqueryexecute.executeSelectObj(
+        userSqlc.getAllRoles(),
+        pool,
+      );
 
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("GET ROLES ERROR:", err);
-    res.status(500).json({ error: "Failed to fetch roles" });
-  }
-},
-
-async updateRole(req, res) {
-  try {
-    const { n_id, s_role_name } = req.body;
-
-    if (!n_id) {
-      return res.status(400).json({ error: "Role ID is required" });
+      res.status(200).json(result);
+    } catch (err) {
+      console.error('GET ROLES ERROR:', err);
+      res.status(500).json({ error: 'Failed to fetch roles' });
     }
+  },
 
-    if (!s_role_name || !s_role_name.trim()) {
-      return res.status(400).json({ error: "Role name is required" });
-    }
+  async updateRole(req, res) {
+    try {
+      const { n_id, s_role_name } = req.body;
 
-    // First, get the old role name
-    const getRoleQuery = {
-      queryString: `SELECT s_role_name FROM tbl_role_master WHERE n_id = $1`,
-      arr: [n_id],
-    };
-    
-    const oldRoleResult = await dbqueryexecute.executeSelectObj(getRoleQuery, pool);
-    
-    if (!oldRoleResult || oldRoleResult.length === 0) {
-      return res.status(404).json({ error: "Role not found" });
-    }
+      if (!n_id) {
+        return res.status(400).json({ error: 'Role ID is required' });
+      }
 
-    const oldRoleName = oldRoleResult[0].s_role_name;
+      if (!s_role_name || !s_role_name.trim()) {
+        return res.status(400).json({ error: 'Role name is required' });
+      }
 
-    // Update the role in role_master
-    const updateRoleQuery = userSqlc.updateRole({
-      n_id,
-      s_role_name: s_role_name.trim(),
-    });
+      // First, get the old role name
+      const getRoleQuery = {
+        queryString: `SELECT s_role_name FROM tbl_role_master WHERE n_id = $1`,
+        arr: [n_id],
+      };
 
-    await dbqueryexecute.executeSelectObj(updateRoleQuery, pool);
+      const oldRoleResult = await dbqueryexecute.executeSelectObj(
+        getRoleQuery,
+        pool,
+      );
 
-    // Update all users who have the old role name
-    if (oldRoleName && oldRoleName !== s_role_name.trim()) {
-      const updateUsersQuery = {
-        queryString: `
+      if (!oldRoleResult || oldRoleResult.length === 0) {
+        return res.status(404).json({ error: 'Role not found' });
+      }
+
+      const oldRoleName = oldRoleResult[0].s_role_name;
+
+      // Update the role in role_master
+      const updateRoleQuery = userSqlc.updateRole({
+        n_id,
+        s_role_name: s_role_name.trim(),
+      });
+
+      await dbqueryexecute.executeSelectObj(updateRoleQuery, pool);
+
+      // Update all users who have the old role name
+      if (oldRoleName && oldRoleName !== s_role_name.trim()) {
+        const updateUsersQuery = {
+          queryString: `
           UPDATE tbl_users_management
           SET s_role = $1
           WHERE s_role = $2
         `,
-        arr: [s_role_name.trim(), oldRoleName],
-      };
+          arr: [s_role_name.trim(), oldRoleName],
+        };
 
-      await dbqueryexecute.executeSelectObj(updateUsersQuery, pool);
+        await dbqueryexecute.executeSelectObj(updateUsersQuery, pool);
+      }
+
+      res.status(200).json({
+        message: 'Role updated successfully and user records updated',
+      });
+    } catch (err) {
+      console.error('UPDATE ROLE ERROR:', err);
+      res.status(500).json({
+        error: 'Failed to update role',
+        details: err.message,
+      });
     }
+  },
 
-    res.status(200).json({
-      message: "Role updated successfully and user records updated",
-    });
-  } catch (err) {
-    console.error("UPDATE ROLE ERROR:", err);
-    res.status(500).json({ 
-      error: "Failed to update role",
-      details: err.message 
-    });
-  }
-},
+  async deleteRole(req, res) {
+    try {
+      const { id } = req.params;
 
-async deleteRole(req, res) {
-  try {
-    const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ error: 'Role ID is required' });
+      }
 
-    if (!id) {
-      return res.status(400).json({ error: "Role ID is required" });
+      const query = userSqlc.deleteRole({ n_id: id });
+
+      await dbqueryexecute.executeSelectObj(query, pool);
+
+      res.status(200).json({ message: 'Role deleted successfully' });
+    } catch (err) {
+      console.error('DELETE ROLE ERROR:', err);
+      res.status(500).json({ error: 'Failed to delete role' });
     }
+  },
 
-    const query = userSqlc.deleteRole({ n_id: id });
-
-    await dbqueryexecute.executeSelectObj(query, pool);
-
-    res.status(200).json({ message: "Role deleted successfully" });
-  } catch (err) {
-    console.error("DELETE ROLE ERROR:", err);
-    res.status(500).json({ error: "Failed to delete role" });
-  }
-},
-
-async getAllPermissions(req, res) {
-  try {
-    const result = await dbqueryexecute.executeSelectObj(
-      userSqlc.getAllPermissions(),
-      pool
-    );
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("GET PERMISSIONS ERROR:", err);
-    res.status(500).json({ error: "Failed to fetch permissions" });
-  }
-},
-
-async createPermission(req, res) {
-  try {
-    const { s_permission_name } = req.body;
-
-    if (!s_permission_name || !s_permission_name.trim()) {
-      return res.status(400).json({ error: "Permission name required" });
+  async getAllPermissions(req, res) {
+    try {
+      const result = await dbqueryexecute.executeSelectObj(
+        userSqlc.getAllPermissions(),
+        pool,
+      );
+      res.status(200).json(result);
+    } catch (err) {
+      console.error('GET PERMISSIONS ERROR:', err);
+      res.status(500).json({ error: 'Failed to fetch permissions' });
     }
+  },
 
-    const result = await dbqueryexecute.executeSelectObj(
-      userSqlc.createPermission({ s_permission_name: s_permission_name.trim() }),
-      pool
-    );
+  async createPermission(req, res) {
+    try {
+      const { s_permission_name } = req.body;
 
-    res.status(201).json(result[0]);
-  } catch (err) {
-    console.error("CREATE PERMISSION ERROR:", err);
-    res.status(500).json({ error: "Failed to create permission" });
-  }
-},
+      if (!s_permission_name || !s_permission_name.trim()) {
+        return res.status(400).json({ error: 'Permission name required' });
+      }
 
-// Replace your deletePermission function in userController.js with this:
+      const result = await dbqueryexecute.executeSelectObj(
+        userSqlc.createPermission({
+          s_permission_name: s_permission_name.trim(),
+        }),
+        pool,
+      );
 
-async deletePermission(req, res) {
-  try {
-    const { id } = req.params;
-
-    if (!id) {
-      return res.status(400).json({ error: "Permission ID is required" });
+      res.status(201).json(result[0]);
+    } catch (err) {
+      console.error('CREATE PERMISSION ERROR:', err);
+      res.status(500).json({ error: 'Failed to create permission' });
     }
+  },
 
-    // First, delete all role-permission assignments for this permission
-    const deleteAssignmentsQuery = userSqlc.deletePermissionAssignments(id);
-    await dbqueryexecute.executeSelectObj(deleteAssignmentsQuery, pool);
+  // Replace your deletePermission function in userController.js with this:
 
-    // Then, delete the permission itself
-    const deletePermissionQuery = userSqlc.deletePermission(id);
-    await dbqueryexecute.executeSelectObj(deletePermissionQuery, pool);
+  async deletePermission(req, res) {
+    try {
+      const { id } = req.params;
 
-    res.status(200).json({ message: "Permission deleted successfully" });
-  } catch (err) {
-    console.error("DELETE PERMISSION ERROR:", err);
-    res.status(500).json({ 
-      error: "Failed to delete permission",
-      details: err.message 
-    });
-  }
-},
+      if (!id) {
+        return res.status(400).json({ error: 'Permission ID is required' });
+      }
 
-async assignPermission(req, res) {
-  try {
-    const { role_id, permission_id } = req.body;
+      // First, delete all role-permission assignments for this permission
+      const deleteAssignmentsQuery = userSqlc.deletePermissionAssignments(id);
+      await dbqueryexecute.executeSelectObj(deleteAssignmentsQuery, pool);
 
-    if (!role_id || !permission_id) {
-      return res.status(400).json({ error: "Role and Permission required" });
+      // Then, delete the permission itself
+      const deletePermissionQuery = userSqlc.deletePermission(id);
+      await dbqueryexecute.executeSelectObj(deletePermissionQuery, pool);
+
+      res.status(200).json({ message: 'Permission deleted successfully' });
+    } catch (err) {
+      console.error('DELETE PERMISSION ERROR:', err);
+      res.status(500).json({
+        error: 'Failed to delete permission',
+        details: err.message,
+      });
     }
+  },
 
-    // ✅ FIX: Pass 'pool' as the second argument
-    await dbqueryexecute.executeSelectObj(
-      userSqlc.assignPermission({ role_id, permission_id }),
-      pool  // <-- This was missing!
-    );
+  async assignPermission(req, res) {
+    try {
+      const { role_id, permission_id } = req.body;
 
-    res.status(201).json({ message: "Permission assigned successfully" });
-  } catch (err) {
-    console.error("ASSIGN PERMISSION ERROR:", err);
-    res.status(500).json({ error: "Failed to assign permission" });
-  }
-},
-// Add these two methods to your userController.js
+      if (!role_id || !permission_id) {
+        return res.status(400).json({ error: 'Role and Permission required' });
+      }
 
-async getPermissionsByRole(req, res) {
-  try {
-    const { roleId } = req.params;
+      // ✅ FIX: Pass 'pool' as the second argument
+      await dbqueryexecute.executeSelectObj(
+        userSqlc.assignPermission({ role_id, permission_id }),
+        pool, // <-- This was missing!
+      );
 
-    if (!roleId) {
-      return res.status(400).json({ error: "Role ID is required" });
+      res.status(201).json({ message: 'Permission assigned successfully' });
+    } catch (err) {
+      console.error('ASSIGN PERMISSION ERROR:', err);
+      res.status(500).json({ error: 'Failed to assign permission' });
     }
+  },
+  // Add these two methods to your userController.js
 
-    const query = userSqlc.getPermissionsByRole({ roleId });
-    const result = await dbqueryexecute.executeSelectObj(query, pool);
+  async getPermissionsByRole(req, res) {
+    try {
+      const { roleId } = req.params;
 
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("GET PERMISSIONS BY ROLE ERROR:", err);
-    res.status(500).json({ error: "Failed to fetch role permissions" });
-  }
-},
+      if (!roleId) {
+        return res.status(400).json({ error: 'Role ID is required' });
+      }
 
-async unassignPermission(req, res) {
-  try {
-    const { role_id, permission_id } = req.body;
+      const query = userSqlc.getPermissionsByRole({ roleId });
+      const result = await dbqueryexecute.executeSelectObj(query, pool);
 
-    if (!role_id || !permission_id) {
-      return res.status(400).json({ error: "Role and Permission required" });
+      res.status(200).json(result);
+    } catch (err) {
+      console.error('GET PERMISSIONS BY ROLE ERROR:', err);
+      res.status(500).json({ error: 'Failed to fetch role permissions' });
     }
+  },
 
-    const query = userSqlc.unassignPermission({ role_id, permission_id });
-    await dbqueryexecute.executeSelectObj(query, pool);
+  async unassignPermission(req, res) {
+    try {
+      const { role_id, permission_id } = req.body;
 
-    res.status(200).json({ message: "Permission unassigned successfully" });
-  } catch (err) {
-    console.error("UNASSIGN PERMISSION ERROR:", err);
-    res.status(500).json({ error: "Failed to unassign permission" });
-  }
-},
+      if (!role_id || !permission_id) {
+        return res.status(400).json({ error: 'Role and Permission required' });
+      }
+
+      const query = userSqlc.unassignPermission({ role_id, permission_id });
+      await dbqueryexecute.executeSelectObj(query, pool);
+
+      res.status(200).json({ message: 'Permission unassigned successfully' });
+    } catch (err) {
+      console.error('UNASSIGN PERMISSION ERROR:', err);
+      res.status(500).json({ error: 'Failed to unassign permission' });
+    }
+  },
 };

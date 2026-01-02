@@ -1,16 +1,10 @@
-import { useAuth } from "@/context/AuthContext";
-import { Plus, Pencil, Trash2, Settings } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { useAuth } from '@/context/AuthContext';
+import { Plus, Pencil, Trash2, Settings } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 export default function UmUserManagementPage() {
   const { isAdmin, isHR } = useAuth();
@@ -23,48 +17,48 @@ export default function UmUserManagementPage() {
   const [isManageRolesOpen, setIsManageRolesOpen] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
   const [deleteRoleId, setDeleteRoleId] = useState(null);
-  const [newRoleInManage, setNewRoleInManage] = useState("");
+  const [newRoleInManage, setNewRoleInManage] = useState('');
 
   const [form, setForm] = useState({
     n_user_id: null,
-    s_full_name: "",
-    s_email: "",
-    s_role: "",
-    d_joining_date: "",
+    s_full_name: '',
+    s_email: '',
+    s_role: '',
+    d_joining_date: '',
   });
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch("http://localhost:5000/user/getAll");
+      const res = await fetch('http://localhost:5000/user/getAll');
       const data = await res.json();
       setUsers(data);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      console.error('Error fetching users:', error);
     }
   };
 
   const fetchRoles = async () => {
     try {
-      const res = await fetch("http://localhost:5000/user/role/getAll");
+      const res = await fetch('http://localhost:5000/user/role/getAll');
       const data = await res.json();
       setRoles(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching roles:", error);
+      console.error('Error fetching roles:', error);
       setRoles([]);
     }
   };
 
   const handleAddRole = async () => {
     if (!roleForm.s_role_name.trim()) {
-      alert("Role name is required");
+      alert('Role name is required');
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/user/role/create", {
-        method: "POST",
+      const res = await fetch('http://localhost:5000/user/role/create', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           s_role_name: roleForm.s_role_name,
@@ -74,31 +68,31 @@ export default function UmUserManagementPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Failed to add role");
+        alert(data.error || 'Failed to add role');
         return;
       }
 
-      setRoleForm({ s_role_name: "" });
+      setRoleForm({ s_role_name: '' });
       setIsRoleOpen(false);
-      alert("Role added successfully");
+      alert('Role added successfully');
       fetchRoles();
     } catch (error) {
-      console.error("Error adding role:", error);
-      alert("Error adding role");
+      console.error('Error adding role:', error);
+      alert('Error adding role');
     }
   };
 
   const handleUpdateRole = async () => {
     if (!editingRole || !editingRole.s_role_name.trim()) {
-      alert("Role name is required");
+      alert('Role name is required');
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/user/role/update", {
-        method: "PUT",
+      const res = await fetch('http://localhost:5000/user/role/update', {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           n_id: editingRole.n_id,
@@ -109,31 +103,31 @@ export default function UmUserManagementPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Failed to update role");
+        alert(data.error || 'Failed to update role');
         return;
       }
 
       setEditingRole(null);
-      alert("Role updated successfully");
+      alert('Role updated successfully');
       fetchRoles();
       fetchUsers(); // Refresh users to show updated role names
     } catch (error) {
-      console.error("Error updating role:", error);
-      alert("Error updating role");
+      console.error('Error updating role:', error);
+      alert('Error updating role');
     }
   };
 
   const handleAddRoleInManage = async () => {
     if (!newRoleInManage.trim()) {
-      alert("Role name is required");
+      alert('Role name is required');
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/user/role/create", {
-        method: "POST",
+      const res = await fetch('http://localhost:5000/user/role/create', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           s_role_name: newRoleInManage,
@@ -143,37 +137,37 @@ export default function UmUserManagementPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Failed to add role");
+        alert(data.error || 'Failed to add role');
         return;
       }
 
-      setNewRoleInManage("");
-      alert("Role added successfully");
+      setNewRoleInManage('');
+      alert('Role added successfully');
       fetchRoles();
     } catch (error) {
-      console.error("Error adding role:", error);
-      alert("Error adding role");
+      console.error('Error adding role:', error);
+      alert('Error adding role');
     }
   };
 
   const handleDeleteRole = async (roleId) => {
     try {
       const res = await fetch(`http://localhost:5000/user/role/delete/${roleId}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Failed to delete role");
+        alert(data.error || 'Failed to delete role');
         return;
       }
 
       setDeleteRoleId(null);
-      alert("Role deleted successfully");
+      alert('Role deleted successfully');
       fetchRoles();
     } catch (error) {
-      console.error("Error deleting role:", error);
-      alert("Error deleting role");
+      console.error('Error deleting role:', error);
+      alert('Error deleting role');
     }
   };
 
@@ -183,16 +177,14 @@ export default function UmUserManagementPage() {
   }, []);
 
   const saveUser = async () => {
-    const url = isEdit
-      ? "http://localhost:5000/user/update"
-      : "http://localhost:5000/user/create";
+    const url = isEdit ? 'http://localhost:5000/user/update' : 'http://localhost:5000/user/create';
 
-    const method = isEdit ? "PUT" : "POST";
+    const method = isEdit ? 'PUT' : 'POST';
 
     try {
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
           n_user_id: form.n_user_id,
@@ -201,7 +193,7 @@ export default function UmUserManagementPage() {
 
       if (!res.ok) {
         const error = await res.json();
-        alert(error.error || "Failed to save user");
+        alert(error.error || 'Failed to save user');
         return;
       }
 
@@ -209,72 +201,69 @@ export default function UmUserManagementPage() {
       setIsEdit(false);
       setForm({
         n_user_id: null,
-        s_full_name: "",
-        s_email: "",
-        s_role: "",
-        d_joining_date: "",
+        s_full_name: '',
+        s_email: '',
+        s_role: '',
+        d_joining_date: '',
       });
 
       fetchUsers();
     } catch (error) {
-      console.error("Error saving user:", error);
-      alert("Error saving user");
+      console.error('Error saving user:', error);
+      alert('Error saving user');
     }
   };
 
   const deleteUser = async (id) => {
     try {
       await fetch(`http://localhost:5000/user/delete/${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
       fetchUsers();
     } catch (error) {
-      console.error("Error deleting user:", error);
+      console.error('Error deleting user:', error);
     }
   };
 
-const openEdit = (user) => {
-  // Helper function to format date correctly without timezone issues
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return "";
-    
-    // Split the date string directly if it's in YYYY-MM-DD format
-    if (typeof dateString === 'string' && dateString.includes('-')) {
-      const datePart = dateString.split('T')[0]; // Get only date part, ignore time
-      return datePart; // Returns YYYY-MM-DD
-    }
-    
-    // Fallback for other formats
-    const date = new Date(dateString);
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    
-    return `${year}-${month}-${day}`;
+  const openEdit = (user) => {
+    // Helper function to format date correctly without timezone issues
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+
+      // Split the date string directly if it's in YYYY-MM-DD format
+      if (typeof dateString === 'string' && dateString.includes('-')) {
+        const datePart = dateString.split('T')[0]; // Get only date part, ignore time
+        return datePart; // Returns YYYY-MM-DD
+      }
+
+      // Fallback for other formats
+      const date = new Date(dateString);
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+
+      return `${year}-${month}-${day}`;
+    };
+
+    setForm({
+      n_user_id: user.n_user_id,
+      s_full_name: user.s_full_name || '',
+      s_email: user.s_email || '',
+      s_role: user.s_role || '',
+      d_joining_date: formatDateForInput(user.d_joining_date),
+    });
+
+    setIsEdit(true);
+    setIsOpen(true);
   };
 
-  setForm({
-    n_user_id: user.n_user_id,
-    s_full_name: user.s_full_name || "",
-    s_email: user.s_email || "",
-    s_role: user.s_role || "",
-    d_joining_date: formatDateForInput(user.d_joining_date),
-  });
-
-  setIsEdit(true);
-  setIsOpen(true);
-};
-
-    if (!isAdmin() && !isHR()) {
+  if (!isAdmin() && !isHR()) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <h2 className="text-xl font-semibold text-red-600">
-          Access Denied
-        </h2>
+        <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
       </div>
     );
   }
-
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] p-6">
@@ -287,10 +276,10 @@ const openEdit = (user) => {
               onClick={() => {
                 setForm({
                   n_user_id: null,
-                  s_full_name: "",
-                  s_email: "",
-                  s_role: "",
-                  d_joining_date: "",
+                  s_full_name: '',
+                  s_email: '',
+                  s_role: '',
+                  d_joining_date: '',
                 });
                 setIsEdit(false);
                 setIsOpen(true);
@@ -302,16 +291,16 @@ const openEdit = (user) => {
           )}
 
           {(isAdmin() || isHR()) && (
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              console.log("Manage Roles clicked");
-              setIsManageRolesOpen(true);
-            }}
-          >
-            <Settings className="w-4 h-4 mr-1" />
-            Manage Roles
-          </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                console.log('Manage Roles clicked');
+                setIsManageRolesOpen(true);
+              }}
+            >
+              <Settings className="w-4 h-4 mr-1" />
+              Manage Roles
+            </Button>
           )}
         </div>
       </div>
@@ -327,26 +316,19 @@ const openEdit = (user) => {
         </div>
 
         {users.map((user) => (
-          <div
-            key={user.n_user_id}
-            className="grid grid-cols-6 gap-4 items-center py-2 border-b"
-          >
+          <div key={user.n_user_id} className="grid grid-cols-6 gap-4 items-center py-2 border-b">
             <div>{user.s_full_name}</div>
             <div>{user.s_role}</div>
             <div>{user.s_email}</div>
-            <div>
-              {user.d_joining_date
-                ? user.d_joining_date.split('T')[0].split('-').reverse().join('-')
-                : "-"}
-            </div>
+            <div>{user.d_joining_date ? user.d_joining_date.split('T')[0].split('-').reverse().join('-') : '-'}</div>
             <div>
               <Badge className="bg-green-500 text-white">Active</Badge>
             </div>
             <div className="flex gap-2">
               {(isAdmin() || isHR()) && (
-              <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
-                <Pencil size={16} />
-              </Button>
+                <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
+                  <Pencil size={16} />
+                </Button>
               )}
               <Button
                 size="sm"
@@ -369,9 +351,7 @@ const openEdit = (user) => {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Roles</DialogTitle>
-            <DialogDescription>
-              View, edit, or delete existing roles
-            </DialogDescription>
+            <DialogDescription>View, edit, or delete existing roles</DialogDescription>
           </DialogHeader>
 
           {/* Add New Role Section */}
@@ -404,10 +384,7 @@ const openEdit = (user) => {
 
             {Array.isArray(roles) && roles.length > 0 ? (
               roles.map((role) => (
-                <div
-                  key={role.n_id}
-                  className="grid grid-cols-3 gap-4 items-center py-3 border-b"
-                >
+                <div key={role.n_id} className="grid grid-cols-3 gap-4 items-center py-3 border-b">
                   {editingRole && editingRole.n_id === role.n_id ? (
                     <>
                       <Input
@@ -421,17 +398,10 @@ const openEdit = (user) => {
                       />
                       <div>{role.n_id}</div>
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={handleUpdateRole}
-                        >
+                        <Button size="sm" onClick={handleUpdateRole}>
                           Save
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingRole(null)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => setEditingRole(null)}>
                           Cancel
                         </Button>
                       </div>
@@ -441,18 +411,10 @@ const openEdit = (user) => {
                       <div>{role.s_role_name}</div>
                       <div>{role.n_id}</div>
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingRole(role)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => setEditingRole(role)}>
                           <Pencil size={16} />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setDeleteRoleId(role.n_id)}
-                        >
+                        <Button size="sm" variant="destructive" onClick={() => setDeleteRoleId(role.n_id)}>
                           <Trash2 size={16} />
                         </Button>
                       </div>
@@ -461,9 +423,7 @@ const openEdit = (user) => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                No roles found. Add a role to get started.
-              </div>
+              <div className="text-center py-8 text-gray-500">No roles found. Add a role to get started.</div>
             )}
           </div>
 
@@ -496,10 +456,7 @@ const openEdit = (user) => {
               Cancel
             </Button>
 
-            <Button
-              variant="destructive"
-              onClick={() => handleDeleteRole(deleteRoleId)}
-            >
+            <Button variant="destructive" onClick={() => handleDeleteRole(deleteRoleId)}>
               Delete
             </Button>
           </div>
@@ -511,9 +468,7 @@ const openEdit = (user) => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this user?
-            </DialogDescription>
+            <DialogDescription>Are you sure you want to delete this user?</DialogDescription>
           </DialogHeader>
 
           <div className="flex justify-end gap-3 mt-4">
@@ -539,16 +494,11 @@ const openEdit = (user) => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Update</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to update this user?
-            </DialogDescription>
+            <DialogDescription>Are you sure you want to update this user?</DialogDescription>
           </DialogHeader>
 
           <div className="flex justify-end gap-3 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setConfirmUpdate(false)}
-            >
+            <Button variant="outline" onClick={() => setConfirmUpdate(false)}>
               Cancel
             </Button>
 
@@ -568,9 +518,9 @@ const openEdit = (user) => {
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Update User" : "Create User"}</DialogTitle>
+            <DialogTitle>{isEdit ? 'Update User' : 'Create User'}</DialogTitle>
             <DialogDescription>
-              {isEdit ? "Update user information" : "Add a new team member to your organization"}
+              {isEdit ? 'Update user information' : 'Add a new team member to your organization'}
             </DialogDescription>
           </DialogHeader>
 
@@ -580,9 +530,7 @@ const openEdit = (user) => {
               name="fullName"
               placeholder="Full Name"
               value={form.s_full_name}
-              onChange={(e) =>
-                setForm({ ...form, s_full_name: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, s_full_name: e.target.value })}
             />
             <Input
               id="email"
@@ -590,34 +538,29 @@ const openEdit = (user) => {
               type="email"
               placeholder="Email"
               value={form.s_email}
-              onChange={(e) =>
-                setForm({ ...form, s_email: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, s_email: e.target.value })}
             />
             <select
               id="role"
               name="role"
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={form.s_role}
-              onChange={(e) =>
-                setForm({ ...form, s_role: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, s_role: e.target.value })}
             >
               <option value="">Select Role</option>
-              {Array.isArray(roles) && roles.map((role) => (
-                <option key={role.n_id} value={role.s_role_name}>
-                  {role.s_role_name}
-                </option>
-              ))}
+              {Array.isArray(roles) &&
+                roles.map((role) => (
+                  <option key={role.n_id} value={role.s_role_name}>
+                    {role.s_role_name}
+                  </option>
+                ))}
             </select>
             <Input
               id="joining-date"
               name="joiningDate"
               type="date"
               value={form.d_joining_date}
-              onChange={(e) =>
-                setForm({ ...form, d_joining_date: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, d_joining_date: e.target.value })}
             />
             <Button
               onClick={() => {
@@ -628,7 +571,7 @@ const openEdit = (user) => {
                 }
               }}
             >
-              {isEdit ? "Update User" : "Create User"}
+              {isEdit ? 'Update User' : 'Create User'}
             </Button>
           </div>
         </DialogContent>
