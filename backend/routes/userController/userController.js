@@ -59,61 +59,78 @@ export default {
   //     });
   // },
 
-  async login(req, res) {
-    try {
-      const result = await dbqueryexecute.executeSelectObj(
-        userSqlc.login(req.body),
-        pool,
-      );
+async login(req, res) {
+  try {
+    const result = await dbqueryexecute.executeSelectObj(
+      userSqlc.login(req.body),
+      pool,
+    );
 
-      if (result.length === 0) {
-        return res.status(404).json({ Mess: 'Email/Password not matched' });
-      }
-      const userRow = result[0];
-
-      const isPasswordValid = await bcrypt.compare(
-        req.body.password,
-        userRow.s_password,
-      );
-
-      if (isPasswordValid) {
-        const payload = {
-          id: userRow.n_user_id,
-          role: userRow.n_role,
-        };
-
-        const accessToken = signAccess(payload);
-
-        const refreshToken = signRefresh(payload);
-
-        await dbqueryexecute.executeSelectObj(
-          userSqlc.updateRefreshToken({ refreshToken, userId: payload.id }),
-          pool,
-        );
-        res.cookie('jid', refreshToken, {
-          httpOnly: true,
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          path: '/',
-        });
-
-        return res.status(200).json({
-          accessToken,
-          email: userRow.s_email,
-          empID: userRow.n_user_id,
-          fullName: userRow.s_full_name,
-          role: userRow.n_role,
-        });
-      }
-
+    if (result.length === 0) {
       return res.status(404).json({ Mess: 'Email/Password not matched' });
-    } catch (error) {
-      console.log(err);
-
-      return res.status(500).json(error);
     }
-  },
+
+    const userRow = result[0];
+
+    const isPasswordValid = await bcrypt.compare(
+      req.body.password,
+      userRow.s_password,
+    );
+
+    if (!isPasswordValid) {
+      return res.status(404).json({ Mess: 'Email/Password not matched' });
+    }
+
+    // 🔐 JWT payload
+    const payload = {
+      id: userRow.n_user_id,
+      role: userRow.n_role,
+    };
+
+    const accessToken = signAccess(payload);
+    const refreshToken = signRefresh(payload);
+
+    // store refresh token
+    await dbqueryexecute.executeSelectObj(
+      userSqlc.updateRefreshToken({
+        refreshToken,
+        userId: payload.id,
+      }),
+      pool,
+    );
+
+    res.cookie('jid', refreshToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+
+    // 🔥 FETCH PERMISSIONS (THIS WAS MISSING)
+    const permResult = await dbqueryexecute.executeSelectObj(
+      userSqlc.getPermissionsByRoleId({ roleId: userRow.n_role }),
+      pool,
+    );
+
+    const permissions = permResult.map(
+      (row) => row.s_permission_name
+    );
+
+    // ✅ SEND permissions to frontend
+    return res.status(200).json({
+      accessToken,
+      email: userRow.s_email,
+      empID: userRow.n_user_id,
+      fullName: userRow.s_full_name,
+      role: userRow.n_role,
+      permissions, // 🔥 VERY IMPORTANT
+    });
+  } catch (err) {
+    console.error('LOGIN ERROR:', err);
+    return res.status(500).json({ error: 'Login failed' });
+  }
+},
 
   // NEW: logout - clear cookie and DB token
   async logout(req, res) {
@@ -147,40 +164,63 @@ export default {
   },
 
   // NEW: refresh token endpoint
-  async refreshToken(req, res) {
-    try {
-      const token = req.cookies.jid;
-      if (!token) {
-        return res.status(401).json({ message: 'No refresh token' });
-      }
-      let decoded;
-      try {
-        decoded = jwt.verify(token, REFRESH_TOKEN_SECRET);
-      } catch (err) {
-        return res.status(401).json({ message: 'Invalid refresh token' });
-      }
-      const userId = decoded.id;
-      const q = await dbqueryexecute.executeSelectObj(
-        userSqlc.getUserById({ userId }),
-        pool,
-      );
-      const userRow = q[0];
-      if (!userRow || userRow.refresh_token !== token) {
-        return res.status(401).json({ message: 'Invalid refresh token' });
-      }
-      const payload = { id: userId, role: userRow.n_role };
-      const accessToken = signAccess(payload);
-      return res.status(200).json({
-        accessToken,
-        email: userRow.s_email,
-        empID: userRow.n_user_id,
-        fullName: userRow.s_full_name,
-        role: userRow.n_role,
-      });
-    } catch (err) {
-      return res.status(500).json({ message: 'Refresh failed' });
+async refreshToken(req, res) {
+  try {
+    const token = req.cookies.jid;
+    if (!token) {
+      return res.status(401).json({ message: 'No refresh token' });
     }
-  },
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, REFRESH_TOKEN_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    const userId = decoded.id;
+
+    const q = await dbqueryexecute.executeSelectObj(
+      userSqlc.getUserById({ userId }),
+      pool,
+    );
+
+    const userRow = q[0];
+    if (!userRow || userRow.refresh_token !== token) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    const payload = {
+      id: userRow.n_user_id,
+      role: userRow.n_role,
+    };
+
+    const accessToken = signAccess(payload);
+
+    // 🔥 FETCH PERMISSIONS AGAIN
+    const permResult = await dbqueryexecute.executeSelectObj(
+      userSqlc.getPermissionsByRoleId({ roleId: userRow.n_role }),
+      pool,
+    );
+
+    const permissions = permResult.map(
+      (row) => row.s_permission_name
+    );
+
+    return res.status(200).json({
+      accessToken,
+      email: userRow.s_email,
+      empID: userRow.n_user_id,
+      fullName: userRow.s_full_name,
+      role: userRow.n_role,
+      permissions, // 🔥 REQUIRED
+    });
+  } catch (err) {
+    console.error('REFRESH ERROR:', err);
+    return res.status(500).json({ message: 'Refresh failed' });
+  }
+}
+,
 
   async register(req, res) {
     try {

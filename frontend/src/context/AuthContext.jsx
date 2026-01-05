@@ -1,48 +1,39 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
-
 import axiosInstance, { setAccessToken } from '@/lib/axiosConfig';
-
-const ROLE = {
-  ADMIN: 1,
-  HR: 4,
-};
-
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // ================= ROLE HELPERS =================
-  const isAdmin = () => user?.role === ROLE.ADMIN;
-  const isHR = () => user?.role === ROLE.HR;
-  const isUser = () => !['ADMIN', 'HR'].includes(user?.role);
+  // ================= PERMISSION HELPER =================
+const normalizePermission = (p) =>
+  p.trim().toUpperCase().replace(/\s+/g, '_');
 
-  const hasAccess = (allowedRoles = []) => {
-    if (!user) return false;
-    return allowedRoles.includes(user.role);
-  };
+const hasPermission = (permissionName) => {
+  if (!user || !Array.isArray(user.permissions)) return false;
+
+  return user.permissions.some(
+    (p) => normalizePermission(p) === permissionName
+  );
+};
 
 
-  // AUTO LOGIN ON PAGE REFRESH (using refresh cookie)
+  // ================= AUTO LOGIN (REFRESH TOKEN) =================
   const tryAutoLogin = async () => {
     try {
-      const res = await axiosInstance.post('/user/refresh'); // cookie sent automatically
+      const res = await axiosInstance.post('/user/refresh');
 
       setAccessToken(res.data.accessToken);
 
@@ -51,10 +42,13 @@ export const AuthProvider = ({ children }) => {
         empID: res.data.empID,
         fullName: res.data.fullName,
         role: res.data.role,
+        permissions: res.data.permissions || [],
       });
 
+      // console.log('USER PERMISSIONS 👉', res.data.permissions);
+
       setIsAuthenticated(true);
-    } catch {
+    } catch (err) {
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -66,68 +60,56 @@ export const AuthProvider = ({ children }) => {
     tryAutoLogin();
   }, []);
 
+  // ================= LOGIN =================
   const login = async (data) => {
     setLoading(true);
-
     try {
       const res = await axiosInstance.post('/user/login', data, {
         withCredentials: true,
       });
 
-      // The backend returns a short-lived access token
       setAccessToken(res.data.accessToken);
 
-      // Store user in memory only (secure)
       setUser({
         email: res.data.email,
         empID: res.data.empID,
         fullName: res.data.fullName,
         role: res.data.role,
+        permissions: res.data.permissions || [],
       });
 
       setIsAuthenticated(true);
-
       toast.success(`Welcome back, ${res.data.fullName}!`);
-
       return 200;
     } catch (error) {
-      if (error.response?.status === 404) {
-        toast.error(error.response.data?.Mess);
-      } else {
-        toast.error('Something went wrong!');
-      }
-
+      toast.error(error.response?.data?.Mess || 'Something went wrong!');
       return 400;
     } finally {
       setLoading(false);
     }
   };
 
+  // ================= REGISTER =================
   const register = async (data) => {
     setLoading(true);
     try {
       await axiosInstance.post('/user/register', data, { withCredentials: true });
       toast.success(`Welcome, continue by logging in, ${data.fullName}!`);
-
       return 200;
     } catch (error) {
-      if (error.response?.status === 409) {
-        toast.error(error.response.data?.mess);
-      } else {
-        toast.error('Something went wrong!');
-      }
-
+      toast.error(error.response?.data?.mess || 'Something went wrong!');
       return 400;
     } finally {
       setLoading(false);
     }
   };
 
+  // ================= LOGOUT =================
   const logout = async () => {
     try {
       await axiosInstance.post('/user/logout', {}, { withCredentials: true });
     } catch {
-      toast.error('logout error');
+      toast.error('Logout failed');
     }
 
     setAccessToken(null);
@@ -136,136 +118,67 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
-  const hasPermission = (action) => {
-    if (!user) {
-      return false;
-    }
 
-    const permissions = {
-      manage_users: user.role === 'admin',
-      assign_tickets: user.role === 'tech_lead',
-      view_all_tickets: true,
-      create_tickets: true,
+  //================== page ======================
+  // ✅ UM navigation – DB driven, NO hardcoded roles
+const getUmNavigationItems = () => {
+  if (!hasPermission('USER_MANAGEMENT')) return [];
 
-      update_ticket_status: user.role === 'developer',
-      log_time: user.role === 'developer',
-      forward_tickets: user.role === 'developer',
+  return [
+    { id: 'dashboard', name: 'Dashboard', href: '/um/dashboard' },
+    { id: 'users', name: 'Users', href: '/um/users' },
+    { id: 'permission', name: 'Permission', href: '/um/permission' },
+  ];
+};
 
-      view_dashboard: true,
-      add_comments: true,
+// ✅ AM navigation – DB driven, NO hardcoded roles
+const getAmNavigationItems = () => {
+  if (!hasPermission('ATTENDANCE_MANAGEMENT')) return [];
 
-      delete_tickets: user.role === 'tech_lead',
-      view_user_management: user.role === 'admin',
-    };
+  return [
+    { id: 'dashboard', name: 'Dashboard', href: '/am/dashboard' },
+    { id: 'attendance', name: 'Attendance', href: '/am/attendance' },
+    { id: 'myleave', name: 'My Leave', href: '/am/myleave' },
+  ];
+};
 
-    return permissions[action] || false;
-  };
+// ✅ HR navigation – DB driven, NO hardcoded roles
+const getHrNavigationItems = () => {
+  if (!hasPermission('HR_MANAGEMENT')) return [];
 
-  const getTmNavigationItems = () =>
-    user
-      ? [
-          { id: 'TmDashboard', name: 'Dashboard', href: '/tm/dashboard' },
-          { id: 'TmAssignment', name: 'Assignment', href: '/tm/assignment' },
-          { id: 'TmTicktes', name: 'Ticktes', href: '/tm/tickets' },
-        ]
-      : [];
+  return [
+    { id: 'dashboard', name: 'Dashboard', href: '/hr/dashboard' },
+    { id: 'employees', name: 'Employees', href: '/hr/employees' },
+    { id: 'payroll', name: 'Payroll', href: '/hr/payroll' },
+    { id: 'performance', name: 'Performance', href: '/hr/performance' },
+  ];
+};
 
-  const getAmNavigationItems = () =>
-    user
-      ? [
-          {
-            id: 'AmDashboard',
-            name: 'Dashboard',
-            href: user.role === 3 ? '/am/dashboard-user' : '/am/dashboard',
-          },
-          {
-            id: 'AmAttendance',
-            name: 'Attendance',
-            href: '/am/attendance',
-          },
-          {
-            id: 'AmLeave',
-            name: 'Leave',
-            href: user.role === 3 || user.role === 2 ? '/am/myleave-user' : '/am/myleave',
-          },
-        ]
-      : [];
+// ✅ PM navigation – DB driven, NO hardcoded roles
+const getPmNavigationItems = () => {
+  if (!hasPermission('PROJECT_MANAGEMENT')) return [];
 
-  const getPmNavigationItems = () =>
-    user
-      ? [
-          {
-            id: 'PmDashboard',
-            name: 'Dashboard',
-            href: user.role === 3 ? '/pm/dashboard-user' : '/pm/dashboard',
-          },
-          {
-            id: 'PmProjects',
-            name: 'Projects',
-            href: user.role === 3 ? '/pm/projects-user' : '/pm/projects',
-          },
-          {
-            id: 'PmTasks',
-            name: 'My tasks',
-            href: user.role === 3 ? '/pm/tasks-user' : '/pm/tasks',
-          },
-          {
-            id: 'PmTimesheet',
-            name: 'Timesheet',
-            href: user.role === 3 ? '/pm/timesheet-user' : '/pm/timesheet',
-          },
+  return [
+    { id: 'dashboard', name: 'Dashboard', href: '/pm/dashboard' },
+    { id: 'projects', name: 'Projects', href: '/pm/projects' },
+    { id: 'tasks', name: 'Tasks', href: '/pm/tasks' },
+    { id: 'timesheet', name: 'Timesheet', href: '/pm/timesheet' },
+  ];
+};
 
-        ]
-      : [];
+// ✅ TM navigation – DB driven, NO hardcoded roles
+const getTmNavigationItems = () => {
+  if (!hasPermission('TICKET_MANAGEMENT')) return [];
 
-const getHrNavigationItems = () =>
-  user
-    ? [
-        {
-          id: 'HrDashboard',
-          name: 'Dashboard',
-          href:
-            user.role === 3||user.role===2
-              ? '/hr/dashboard-user'
-              : '/hr/dashboard',
-        },
-        {
-          id: 'HrEmployees',
-          name: 'Employees',
-          href:
-            user.role === 3||user.role===2
-              ? '/hr/employees-user'
-              : '/hr/employees',
-        },
-        {
-          id: 'HrPayroll',
-          name: 'Payroll',
-          href:
-            user.role === 3||user.role===2
-              ? '/hr/payroll-user'
-              : '/hr/payroll',
-        },
-        {
-          id: 'HrPerformance',
-          name: 'Performance',
-          href:
-            user.role === 3
-              ? '/hr/performance-user'
-              : '/hr/performance',
-        },
-      ]
-    : [];
+  return [
+    { id: 'dashboard', name: 'Dashboard', href: '/tm/dashboard' },
+    { id: 'tickets', name: 'Tickets', href: '/tm/tickets' },
+    { id: 'assignment', name: 'My Tickets', href: '/tm/assignment' },
+    { id: 'create', name: 'Create Ticket', href: '/tm/create' },
+  ];
+};
 
-
-  const getUmNavigationItems = () =>
-    user
-      ? [
-          { id: 'UmDashboard', name: 'Dashboard', href: '/um/dashboard' },
-          { id: 'UmUsers', name: 'Users', href: '/um/users' },
-          { id: 'UmPermission', name: 'Permission', href: '/um/permission' },
-        ]
-      : [];
-
+  // ================= CONTEXT VALUE =================
   const value = {
     user,
     loading,
@@ -276,19 +189,14 @@ const getHrNavigationItems = () =>
     logout,
     register,
 
-    // role helpers
-    isAdmin,
-    isHR,
-    isUser,
-    hasAccess,
-
-    // navigation
-    getTmNavigationItems,
+    // permission helper
+    hasPermission,
+    getUmNavigationItems,
+    getAmNavigationItems,
     getHrNavigationItems,
     getPmNavigationItems,
-    getUmNavigationItems,
+    getTmNavigationItems,
   };
-
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

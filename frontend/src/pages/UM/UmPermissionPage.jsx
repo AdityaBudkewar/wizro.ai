@@ -3,8 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useAuth } from '@/context/AuthContext';
 
 export default function UmPermissionPage() {
+  const { hasPermission } = useAuth();
   const [permissions, setPermissions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [rolePermissions, setRolePermissions] = useState([]);
@@ -172,6 +174,16 @@ export default function UmPermissionPage() {
   const availablePermissions = getAvailablePermissions();
   const allSelected = selectedPermissions.length === availablePermissions.length && availablePermissions.length > 0;
 
+      /* ---------------- ACCESS CONTROL ---------------- */
+
+  if (!hasPermission('USER_MANAGEMENT')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
@@ -179,10 +191,10 @@ export default function UmPermissionPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Role & Permission Management
           </h1>
-          <Button onClick={() => setIsManageOpen(true)}>
+          {/* <Button onClick={() => setIsManageOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Manage Permissions
-          </Button>
+          </Button> */}
         </div>
 
         <div className="grid grid-cols-12 gap-6">

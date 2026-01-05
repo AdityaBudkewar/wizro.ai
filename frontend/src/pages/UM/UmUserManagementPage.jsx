@@ -17,7 +17,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function UmUserManagementPage() {
-  const { isAdmin, isHR } = useAuth();
+  const { hasPermission } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -275,7 +275,7 @@ export default function UmUserManagementPage() {
 
   /* ---------------- ACCESS CONTROL ---------------- */
 
-  if (!isAdmin() && !isHR()) {
+  if (!hasPermission('USER_MANAGEMENT')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>

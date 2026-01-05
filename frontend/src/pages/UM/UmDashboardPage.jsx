@@ -25,8 +25,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
+import { useAuth } from '@/context/AuthContext';
 
 export default function UmDashboardPage() {
+  const { hasPermission } = useAuth();
   const stats = [
     {
       title: 'Total Tasks',
@@ -151,6 +153,15 @@ export default function UmDashboardPage() {
     { value: 2, label: 'Nazneen Pinjari' },
   ];
 
+  /* ---------------- ACCESS CONTROL ---------------- */
+
+  if (!hasPermission('USER_MANAGEMENT')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
       <div className="p-6">

@@ -307,4 +307,18 @@ export default {
       arr: [data.role_id, data.permission_id],
     };
   },
+  getPermissionsByRoleId(data) {
+  return {
+    queryString: `
+      SELECT pm.s_permission_name
+      FROM tbl_role_permissions rp
+      JOIN tbl_permission_master pm
+        ON pm.n_id = rp.permission_id
+      WHERE rp.role_id = $1
+      ORDER BY pm.s_permission_name ASC
+    `,
+    arr: [data.roleId],
+  };
+},
+
 };

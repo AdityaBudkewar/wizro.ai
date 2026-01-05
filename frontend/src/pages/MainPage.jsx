@@ -18,113 +18,128 @@ export default function MainPage() {
     return <div className="flex h-screen items-center justify-center text-xl font-medium">Loading...</div>;
   }
 
-  let roleId = null;
+  // let roleId = null;
 
-  if (typeof user.role === 'string') {
-    const roleMap = {
-      admin: 1,
-      pm: 2,
-      employee: 3,
-      hr: 4,
-    };
+  // if (typeof user.role === 'string') {
+  //   const roleMap = {
+  //     admin: 1,
+  //     pm: 2,
+  //     employee: 3,
+  //     hr: 4,
+  //   };
 
-    roleId = roleMap[user.role] || null;
-  } else {
-    roleId = user.role;
-  }
+  //   roleId = roleMap[user.role] || null;
+  // } else {
+  //   roleId = user.role;
+  // }
 
   // MODULE LIST
+  const normalizePermission = (permission) =>
+  permission
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '_');
 
-  const allModules = [
-    {
-      id: 1,
-      title: 'Project Management',
-      description: 'Manage projects, tasks, timelines, and team collaboration',
-      keyFeatures: ['Dashboard', 'Projects & Team', 'Task Management', 'Timesheet'],
-      route: '/pm/dashboard',
-      icon: FolderKanban,
-      color: 'blue',
-      key: 'project',
-    },
-    {
-      id: 2,
-      title: 'HR Management',
-      description: 'Employee management, payroll, and recruitment',
-      keyFeatures: ['Dashboard', 'Payroll Processing', 'Emp Management', 'Performance Review'],
-      route: '/hr/dashboard',
-      icon: Users,
-      color: 'purple',
-      key: 'hr',
-    },
-    {
-      id: 3,
-      title: 'Ticket Management',
-      description: 'Support tickets, issue tracking, and customer queries',
-      keyFeatures: ['Issue Tracking', 'SLA Monitoring', 'Priority Management', 'Customer Support'],
-      route: '/tm/dashboard',
-      icon: Ticket,
-      color: 'pink',
-      key: 'ticket',
-    },
-    {
-      id: 4,
-      title: 'Attendance Management',
-      description: 'Track employee attendance, shifts, and working hours',
-      keyFeatures: ['Dashboard', 'Clock In/Out', 'Leave Tracking', 'Reports'],
-      route: '/am/dashboard',
-      icon: Clock,
-      color: 'green',
-      key: 'attendance',
-    },
-    {
-      id: 5,
-      title: 'User Management',
-      description: 'Manage users, roles, permissions, and access control settings',
-      keyFeatures: ['User Accounts', 'Permissions', 'Role Management', 'Access Control'],
-      route: '/um/dashboard',
-      icon: UserCog,
-      color: 'orange',
-      key: 'user',
-    },
-    {
-      id: 6,
-      title: 'Finance Management',
-      description: 'Handle invoices, payments, expenses, and budgeting',
-      keyFeatures: ['Dashboard', 'Invoices', 'Payments', 'Expenses', 'Budget & Costing'],
-      route: '/fin/dashboard',
-      icon: Receipt,
-      color: 'amber',
-      key: 'finance',
-    },
-    {
-      id: 7,
-      title: 'Vendor Management',
-      description: 'Manage vendors, contracts, performance, and purchase orders',
-      keyFeatures: [
-        'Dashboard',
-        'Vendor Profiles',
-        'Purchase Orders',
-        'Vendor Payments',
-        'Vendor Performance',
-        'Contract Upload',
-      ],
-      route: '/vendor/dashboard',
-      icon: Briefcase,
-      color: 'teal',
-      key: 'vendor',
-    },
-  ];
+    
+
+const allModules = [
+  {
+    id: 1,
+    title: 'Project Management',
+    description: 'Manage projects, tasks, timelines, and team collaboration',
+    keyFeatures: ['Dashboard', 'Projects & Team', 'Task Management', 'Timesheet'],
+    permission: 'PROJECT_MANAGEMENT',
+    route: '/pm/dashboard',
+    icon: FolderKanban,
+    color: 'blue',
+  },
+  {
+    id: 2,
+    title: 'HR Management',
+    description: 'Employee management, payroll, and recruitment',
+    keyFeatures: ['Dashboard', 'Payroll Processing', 'Emp Management', 'Performance Review'],
+    permission: 'HR_MANAGEMENT',
+    route: '/hr/dashboard',
+    icon: Users,
+    color: 'purple',
+  },
+  {
+    id: 3,
+    title: 'Ticket Management',
+    description: 'Support tickets, issue tracking, and customer queries',
+    keyFeatures: ['Issue Tracking', 'SLA Monitoring', 'Priority Management', 'Customer Support'],
+    permission: 'TICKET_MANAGEMENT',
+    route: '/tm/dashboard',
+    icon: Ticket,
+    color: 'pink',
+  },
+  {
+    id: 4,
+    title: 'Attendance Management',
+    description: 'Track employee attendance, shifts, and working hours',
+    keyFeatures: ['Dashboard', 'Clock In/Out', 'Leave Tracking', 'Reports'],
+    permission: 'ATTENDANCE_MANAGEMENT',
+    route: '/am/dashboard',
+    icon: Clock,
+    color: 'green',
+  },
+  {
+    id: 5,
+    title: 'User Management',
+    description: 'Manage users, roles, permissions, and access control settings',
+    keyFeatures: ['User Accounts', 'Permissions', 'Role Management', 'Access Control'],
+    permission: 'USER_MANAGEMENT',
+    route: '/um/dashboard',
+    icon: UserCog,
+    color: 'orange',
+  },
+  {
+    id: 6,
+    title: 'Finance Management',
+    description: 'Handle invoices, payments, expenses, and budgeting',
+    keyFeatures: ['Dashboard', 'Invoices', 'Payments', 'Expenses', 'Budget & Costing'],
+    permission: 'FINANCE_MANAGEMENT',
+    route: '/fin/dashboard',
+    icon: Receipt,
+    color: 'amber',
+  },
+  {
+    id: 7,
+    title: 'Vendor Management',
+    description: 'Manage vendors, contracts, performance, and purchase orders',
+    keyFeatures: [
+      'Dashboard',
+      'Vendor Profiles',
+      'Purchase Orders',
+      'Vendor Payments',
+      'Vendor Performance',
+      'Contract Upload',
+    ],
+    permission: 'VENDOR_MANAGEMENT',
+    route: '/vendor/dashboard',
+    icon: Briefcase,
+    color: 'teal',
+  },
+];
+
 
   //  ROLE-BASED MODULE ACCESS
 
-  const roleModulesMap = {
-    1: ['project', 'hr', 'ticket', 'attendance', 'finance', 'vendor','user'], // Admin
-    2: ['project', 'hr', 'ticket', 'attendance', 'finance', 'user'], // PM
-    3: ['project', 'hr', 'ticket', 'attendance', 'finance', 'user'], // Employee
-    4: ['hr', 'ticket', 'attendance', 'finance', 'vendor', 'user'], // HR
-  };
+  // const roleModulesMap = {
+  //   1: ['project', 'hr', 'ticket', 'attendance', 'finance', 'vendor','user'], // Admin
+  //   2: ['project', 'hr', 'ticket', 'attendance', 'finance', 'user'], // PM
+  //   3: ['project', 'hr', 'ticket', 'attendance', 'finance', 'user'], // Employee
+  //   4: ['hr', 'ticket', 'attendance', 'finance', 'vendor', 'user'], // HR
+  // };
 
-  const modules = roleId ? allModules.filter((mod) => roleModulesMap[roleId]?.includes(mod.key)) : [];
+  // const modules = roleId ? allModules.filter((mod) => roleModulesMap[roleId]?.includes(mod.key)) : [];
+const modules = allModules.filter((module) =>
+  user.permissions?.some(
+    (p) => normalizePermission(p) === module.permission
+  )
+);
+
+
 
   //  COLOR THEMES FOR MODULE CARDS
 
@@ -280,7 +295,7 @@ export default function MainPage() {
                     <p className="text-slate-500 font-semibold text-xs mb-3">KEY FEATURES</p>
 
                     <div className="grid grid-cols-2 gap-y-1 gap-x-3 mb-5 flex-1">
-                      {module.keyFeatures.map((feature, idx) => (
+                      {(module.keyFeatures || []).map((feature, idx) => (
                         <div key={idx} className="flex items-start space-x-2">
                           <span className={`w-2 h-2 mt-1 rounded-full ${colors.dot}`} />
                           <span className="text-slate-600 text-sm">{feature}</span>
