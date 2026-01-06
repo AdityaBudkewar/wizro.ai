@@ -13,6 +13,12 @@ import TmRoutes from './TmRoutes';
 import UmRoutes from './UmRoutes';
 import FMRoutes from './FMRoutes';
 
+
+import EmployeeFMRoutes from "./EmployeeFMRoutes";
+import HRFMRoutes from "./HRFMRoutes";
+import PMFMRoutes from "./PMFMRoutes";
+
+
 const routes = [
   { path: '/', element: <LandingPage /> },
   { path: '/login', element: <LoginPage /> },
@@ -25,6 +31,10 @@ const routes = [
   AmRoutes,
   UmRoutes,
   FMRoutes,
+
+  EmployeeFMRoutes,  // employee FM
+  HRFMRoutes,        // HR FM
+  PMFMRoutes,        // PM FM
 
   { path: '*', element: <NotFoundPage /> },
 ];
