@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const ExpenseList = () => {
   const { user } = useAuth();
+  const { hasPermission } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -104,6 +105,13 @@ const ExpenseList = () => {
     }
   };
 
+    if (!hasPermission('USER_MANAGEMENT')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
+      </div>
+    );
+  }
 
   /* ================= UI ================= */
 
