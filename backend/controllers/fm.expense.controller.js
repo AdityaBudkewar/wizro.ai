@@ -69,7 +69,8 @@ export const createExpense = async (req, res) => {
   try {
     const payload = {
       ...req.body,
-      created_by: req.user.empID,
+      created_by: req.user.empID || req.user.user_id || req.user.id,
+
     };
 
     const result = await insertExpense(payload);

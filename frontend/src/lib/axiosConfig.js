@@ -23,10 +23,9 @@ axiosInstance.interceptors.request.use(
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
-
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => Promise.reject(error)
 );
 
 axiosInstance.interceptors.response.use(
@@ -34,7 +33,12 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+    // 🚨 IMPORTANT: do NOT retry refresh endpoint itself
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      originalRequest.url !== '/user/refresh'
+    ) {
       originalRequest._retry = true;
 
       try {
@@ -43,13 +47,17 @@ axiosInstance.interceptors.response.use(
         setAccessToken(res.data.accessToken);
 
         return axiosInstance(originalRequest);
-      } catch {
-        toast.error('Refresh token expired or invalid');
+      } catch (err) {
+        toast.error('Session expired. Please login again.');
+        accessToken = null;
+
+        // optional: redirect to login
+        window.location.href = '/login';
       }
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 export default axiosInstance;

@@ -14,7 +14,8 @@ const LoginPage = () => {
     password: '123',
   });
 
-  const { login, loading } = useAuth();
+  const { login, loading, user } = useAuth();
+
 
   const navigate = useNavigate();
 
@@ -23,8 +24,18 @@ const LoginPage = () => {
     const res = await login(credentials);
 
     if (res !== 400) {
-      navigate('/main');
-    }
+      // role-based redirect
+      if (user.role === 3) {
+        navigate('/employee/fm/dashboard'); // Employee
+      } else if (user.role === 4) {
+        navigate('/hr/fm/dashboard'); // HR
+      } else if (user.role === 2) {
+        navigate('/pm/fm/dashboard'); // PM
+      } else if (user.role === 1) {
+        navigate('/fm/dashboard'); // Admin
+      }
+}
+
   };
 
   const handleInputChange = (e) => {

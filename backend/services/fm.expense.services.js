@@ -28,11 +28,13 @@ export const fetchExpensesByEmployee = async (empID) => {
     SELECT *
     FROM tbl_fm_expense_master
     WHERE employee_id = $1
+       OR created_by = $1
     ORDER BY created_at DESC
     `,
     [empID]
   );
 };
+
  
 /* ================= INSERT ================= */
  
