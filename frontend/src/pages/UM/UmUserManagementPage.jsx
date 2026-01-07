@@ -13,9 +13,7 @@ const STATUS_OPTIONS = [
 
 // Mock components (replace with your actual shadcn/ui components)
 const Badge = ({ className, children }) => (
-  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${className}`}>
-    {children}
-  </span>
+  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${className}`}>{children}</span>
 );
 
 const Button = ({ variant = 'default', size = 'default', onClick, children, className = '' }) => {
@@ -107,6 +105,7 @@ export default function UmUserManagementPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [files, setFiles] = useState({});
+  const [editRoleName, setEditRoleName] = useState('');
 
   const [form, setForm] = useState({
     n_user_id: null,
@@ -249,31 +248,31 @@ export default function UmUserManagementPage() {
     }
   };
 
-const openEdit = (user) => {
-  setForm({
-    n_user_id: user.n_user_id,
-    s_full_name: user.s_full_name || '',
-    s_email: user.s_email || '',
-    n_role: user.n_role || '',
-    d_joining_date: user.d_joining_date?.split('T')[0] || '',
-    n_status: user.n_status ?? 1,
-    s_aadhar_card_no: user.s_aadhar_card_no || '',
-    s_pan_card_no: user.s_pan_card_no || '',
-    s_bank_name: user.s_bank_name || '',
-    s_bank_account_no: user.s_bank_account_no || '',
-    s_bank_ifsc_code: user.s_bank_ifsc_code || '',
+  const openEdit = (user) => {
+    setIsManageRolesOpen(false);
+    setForm({
+      n_user_id: user.n_user_id,
+      s_full_name: user.s_full_name || '',
+      s_email: user.s_email || '',
+      n_role: user.n_role || '',
+      d_joining_date: user.d_joining_date?.split('T')[0] || '',
+      n_status: user.n_status ?? 1,
+      s_aadhar_card_no: user.s_aadhar_card_no || '',
+      s_pan_card_no: user.s_pan_card_no || '',
+      s_bank_name: user.s_bank_name || '',
+      s_bank_account_no: user.s_bank_account_no || '',
+      s_bank_ifsc_code: user.s_bank_ifsc_code || '',
 
-    // 👇 store flags
-    has_aadhar_img: user.has_aadhar_img,
-    has_pan_img: user.has_pan_img,
-    has_passport_photo: user.has_passport_photo,
-  });
+      // 👇 store flags
+      has_aadhar_img: user.has_aadhar_img,
+      has_pan_img: user.has_pan_img,
+      has_passport_photo: user.has_passport_photo,
+    });
 
-  setFiles({});
-  setIsEdit(true);
-  setIsOpen(true);
-};
-
+    setFiles({});
+    setIsEdit(true);
+    setIsOpen(true);
+  };
 
   const openCreate = () => {
     resetForm();
@@ -348,11 +347,22 @@ const openEdit = (user) => {
                     <Badge className={`${statusBadge.color} h-fit`}>{statusBadge.label}</Badge>
                   </div>
                   <div className="mt-3 text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                    <p><strong>Role:</strong> {getRoleName(user.n_role)}</p>
-                    <p><strong>Joined:</strong> {formatDate(user.d_joining_date)}</p>
+                    <p>
+                      <strong>Role:</strong> {getRoleName(user.n_role)}
+                    </p>
+                    <p>
+                      <strong>Joined:</strong> {formatDate(user.d_joining_date)}
+                    </p>
                   </div>
                   <div className="flex justify-end gap-2 mt-4">
-                    <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setIsManageRolesOpen(false);
+                        openEdit(user);
+                      }}
+                    >
                       <Pencil size={14} />
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => setDeleteId(user.n_user_id)}>
@@ -367,7 +377,13 @@ const openEdit = (user) => {
       </div>
 
       {/* ADD / EDIT USER DIALOG */}
-      <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) resetForm(); }}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent className="w-[90vw] max-w-4xl">
           <DialogHeader>
             <DialogTitle>{isEdit ? 'Update User' : 'Create User'}</DialogTitle>
@@ -377,7 +393,9 @@ const openEdit = (user) => {
           <div className="space-y-6">
             {/* BASIC INFORMATION */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">
+                Basic Information
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -424,7 +442,9 @@ const openEdit = (user) => {
                   >
                     <option value="">Select Role</option>
                     {roles.map((r) => (
-                      <option key={r.n_id} value={r.n_id}>{r.s_role_name}</option>
+                      <option key={r.n_id} value={r.n_id}>
+                        {r.s_role_name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -436,12 +456,16 @@ const openEdit = (user) => {
                     onChange={(e) => setForm({ ...form, n_status: e.target.value })}
                   >
                     {STATUS_OPTIONS.map((status) => (
-                      <option key={status.value} value={status.value}>{status.label}</option>
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Joining Date</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Joining Date
+                  </label>
                   <Input
                     type="date"
                     value={form.d_joining_date}
@@ -453,10 +477,14 @@ const openEdit = (user) => {
 
             {/* IDENTITY DETAILS */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">Identity Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">
+                Identity Details
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Aadhaar Number</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Aadhaar Number
+                  </label>
                   <Input
                     placeholder="Enter 12-digit Aadhaar"
                     maxLength={12}
@@ -464,21 +492,25 @@ const openEdit = (user) => {
                     onChange={(e) => setForm({ ...form, s_aadhar_card_no: e.target.value })}
                   />
                 </div>
-                <FileInputField label="Choose Aadhaar Card Image" name="b_aadhar_card_img" onChange={handleFileChange} />
+                <FileInputField
+                  label="Choose Aadhaar Card Image"
+                  name="b_aadhar_card_img"
+                  onChange={handleFileChange}
+                />
                 {/* Aadhaar Preview */}
-                  {isEdit && form.has_aadhar_img && (
-                    <div className="mt-2">
-                      <a
-                        href={`${API_BASE}/document/${form.n_user_id}/b_aadhar_card_img`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 text-sm underline block mt-1"
-                      >
-                        Download Aadhaar
-                      </a>
-                    </div>
-                  )}
-                
+                {isEdit && form.has_aadhar_img && (
+                  <div className="mt-2">
+                    <a
+                      href={`${API_BASE}/document/${form.n_user_id}/b_aadhar_card_img`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 text-sm underline block mt-1"
+                    >
+                      Download Aadhaar
+                    </a>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PAN Number</label>
                   <Input
@@ -501,49 +533,65 @@ const openEdit = (user) => {
                     </a>
                   </div>
                 )}
-                
+
                 <FileInputField label="Choose Passport Photo" name="b_passport_photo" onChange={handleFileChange} />
                 {isEdit && form.has_passport_photo && (
-                <div className="mt-2">
-                  <a
-                    href={`${API_BASE}/document/${form.n_user_id}/b_passport_photo`}
-                    target="_blank"
-                    className="text-blue-600 text-sm underline block mt-1"
-                  >
-                    Download Passport Photo
-                  </a>
-                </div>
-              )}
-
-                
+                  <div className="mt-2">
+                    <a
+                      href={`${API_BASE}/document/${form.n_user_id}/b_passport_photo`}
+                      target="_blank"
+                      className="text-blue-600 text-sm underline block mt-1"
+                    >
+                      Download Passport Photo
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* EDUCATION DOCUMENTS */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">Education Documents</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">
+                Education Documents
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FileInputField label="Choose 10th Marksheet" name="b_10th_mark_sheet" onChange={handleFileChange} />
                 <FileInputField label="Choose 12th Marksheet" name="b_12th_mark_sheet" onChange={handleFileChange} />
-                <FileInputField label="Choose Degree Marksheet" name="b_degree_mark_sheet" onChange={handleFileChange} />
+                <FileInputField
+                  label="Choose Degree Marksheet"
+                  name="b_degree_mark_sheet"
+                  onChange={handleFileChange}
+                />
                 <FileInputField label="Choose Certificates" name="b_certificates" onChange={handleFileChange} />
               </div>
             </div>
 
             {/* PROFESSIONAL DOCUMENTS */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">Professional Documents</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">
+                Professional Documents
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FileInputField label="Choose Professional Certifications" name="b_professional_certifications" onChange={handleFileChange} />
+                <FileInputField
+                  label="Choose Professional Certifications"
+                  name="b_professional_certifications"
+                  onChange={handleFileChange}
+                />
                 <FileInputField label="Choose Offer Letter" name="b_offer_letter" onChange={handleFileChange} />
-                <FileInputField label="Choose Experience Letter" name="b_experience_letter" onChange={handleFileChange} />
+                <FileInputField
+                  label="Choose Experience Letter"
+                  name="b_experience_letter"
+                  onChange={handleFileChange}
+                />
                 <FileInputField label="Choose Salary Slips" name="b_salary_slips" onChange={handleFileChange} />
               </div>
             </div>
 
             {/* BANK DETAILS */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">Bank Details</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 border-b dark:border-gray-700 pb-2">
+                Bank Details
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank Name</label>
@@ -554,7 +602,9 @@ const openEdit = (user) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Number</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Account Number
+                  </label>
                   <Input
                     placeholder="Enter account number"
                     value={form.s_bank_account_no}
@@ -569,14 +619,20 @@ const openEdit = (user) => {
                     onChange={(e) => setForm({ ...form, s_bank_ifsc_code: e.target.value })}
                   />
                 </div>
-                <FileInputField label="Choose Bank Passbook Copy" name="b_bank_passbook_copy" onChange={handleFileChange} />
+                <FileInputField
+                  label="Choose Bank Passbook Copy"
+                  name="b_bank_passbook_copy"
+                  onChange={handleFileChange}
+                />
                 <FileInputField label="Choose Resume/CV" name="b_resume_cv" onChange={handleFileChange} />
               </div>
             </div>
 
             {/* ACTION BUTTONS */}
             <div className="flex justify-end gap-2 pt-4 border-t dark:border-gray-700">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={saveUser}>{isEdit ? 'Update User' : 'Create User'}</Button>
             </div>
           </div>
@@ -588,11 +644,154 @@ const openEdit = (user) => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
-            <DialogDescription>Are you sure you want to delete this user? This action cannot be undone.</DialogDescription>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setDeleteId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => deleteUsers(deleteId)}>Delete</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={() => deleteUsers(deleteId)}>
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* MANAGE ROLES DIALOG */}
+      <Dialog open={isManageRolesOpen} onOpenChange={setIsManageRolesOpen}>
+        <DialogContent className="w-[550px] max-h-[75vh]">
+          <DialogHeader>
+            <DialogTitle>Manage Roles</DialogTitle>
+            <DialogDescription>Add, edit, or delete roles</DialogDescription>
+          </DialogHeader>
+
+          {/* ADD ROLE */}
+          <div className="flex gap-2 mb-4">
+            <Input
+              placeholder="Enter role name"
+              value={newRoleInManage}
+              onChange={(e) => setNewRoleInManage(e.target.value)}
+            />
+            <Button
+              onClick={async () => {
+                if (!newRoleInManage.trim()) return;
+
+                const res = await fetch(`${API_BASE}/role/create`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ s_role_name: newRoleInManage }),
+                });
+
+                if (!res.ok) {
+                  alert('Failed to add role');
+                  return;
+                }
+
+                setNewRoleInManage('');
+                fetchRoles();
+              }}
+            >
+              Add
+            </Button>
+          </div>
+
+          {/* ROLE LIST */}
+          <div className="space-y-2 max-h-60 overflow-auto">
+            {roles.map((role) => (
+              <div key={role.n_id} className="flex justify-between items-center border rounded p-2">
+                <span>{role.s_role_name}</span>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsManageRolesOpen(false);
+                      setEditingRole(role);
+                      setEditRoleName(role.s_role_name);
+                    }}
+                  >
+                    <Pencil size={14} />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={async () => {
+                      await fetch(`${API_BASE}/role/delete/${role.n_id}`, {
+                        method: 'DELETE',
+                      });
+                      fetchRoles();
+                      fetchUsers();
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* UPDATE ROLE DIALOG */}
+      <Dialog
+        open={!!editingRole}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingRole(null);
+            setEditRoleName('');
+          }
+        }}
+      >
+        <DialogContent className="w-[550px] max-h-[75vh]">
+          <DialogHeader>
+            <DialogTitle>Update Role</DialogTitle>
+            <DialogDescription>Edit role name</DialogDescription>
+          </DialogHeader>
+
+          <Input placeholder="Enter role name" value={editRoleName} onChange={(e) => setEditRoleName(e.target.value)} />
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingRole(null);
+                setEditRoleName('');
+              }}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={async () => {
+                if (!editRoleName.trim()) {
+                  alert('Role name required');
+                  return;
+                }
+
+                const res = await fetch(`${API_BASE}/role/update`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    n_id: editingRole.n_id,
+                    s_role_name: editRoleName,
+                  }),
+                });
+
+                if (!res.ok) {
+                  alert('Failed to update role');
+                  return;
+                }
+
+                setEditingRole(null);
+                setEditRoleName('');
+                fetchRoles();
+                fetchUsers();
+              }}
+            >
+              Update
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
