@@ -130,6 +130,90 @@ export default function UmDashboardPage() {
     );
   }
 
+  function UserStatusLoop({ total, active, inactive, onLeave, suspended }) {
+    if (!total || total === 0) {
+      return (
+        <Card className="h-full flex items-center justify-center bg-[var(--color-card)] border-[var(--color-border)]">
+          <CardContent className="text-sm text-[var(--color-muted-foreground)]">No user data available</CardContent>
+        </Card>
+      );
+    }
+
+    const radius = 110; // 🔥 INCREASE SIZE
+    const strokeWidth = 16;
+    const circumference = 2 * Math.PI * radius;
+
+    const segments = [
+      { value: active, color: '#22c55e' }, // green
+      { value: inactive, color: '#6b7280' }, // gray
+      { value: onLeave, color: '#f59e0b' }, // yellow
+      { value: suspended, color: '#ef4444' }, // red
+    ];
+
+    let offset = 0;
+
+    return (
+      <Card className="h-full flex items-center justify-center bg-[var(--color-card)] border-[var(--color-border)]">
+        <CardContent className="flex flex-col items-center justify-center gap-8">
+          {/* LOOP */}
+          <div className="relative w-[300px] h-[300px]">
+            <svg width="300" height="300" viewBox="0 0 300 300" className="-rotate-90">
+              {/* Background ring */}
+              <circle cx="150" cy="150" r={radius} stroke="#e5e7eb" strokeWidth={strokeWidth} fill="none" />
+
+              {/* Segments */}
+              {segments.map((seg, i) => {
+                const length = (seg.value / total) * circumference;
+                const dashArray = `${length} ${circumference - length}`;
+                const dashOffset = -offset;
+                offset += length;
+
+                return (
+                  <circle
+                    key={i}
+                    cx="150"
+                    cy="150"
+                    r={radius}
+                    fill="none"
+                    stroke={seg.color}
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={dashArray}
+                    strokeDashoffset={dashOffset}
+                    strokeLinecap="round"
+                  />
+                );
+              })}
+            </svg>
+
+            {/* CENTER TEXT */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <p className="text-sm text-[var(--color-muted-foreground)]">Total Users</p>
+              <p className="text-5xl font-bold text-[var(--color-foreground)]">{total}</p>
+            </div>
+          </div>
+
+          {/* LEGEND */}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <LegendItem color="bg-green-500" label="Active" value={active} />
+            <LegendItem color="bg-gray-500" label="Inactive" value={inactive} />
+            <LegendItem color="bg-yellow-500" label="On Leave" value={onLeave} />
+            <LegendItem color="bg-red-500" label="Suspended" value={suspended} />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  function LegendItem({ color, label, value }) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className={`w-3 h-3 rounded-full ${color}`} />
+        <span className="text-[var(--color-muted-foreground)]">{label}</span>
+        <span className="font-semibold text-[var(--color-foreground)]">{value}</span>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
       <div className="p-6">
@@ -185,34 +269,17 @@ export default function UmDashboardPage() {
 
         {/* USER STATUS (LEFT) + RECENT USERS (RIGHT) */}
         <div className="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          {/* LEFT SIDE — USER STATUS OVERVIEW */}
+          {/* LEFT SIDE — USER STATUS OVERVIEW (SINGLE LOOP) */}
           <div className="lg:col-span-7 h-full flex flex-col">
             <h2 className="text-lg font-semibold mb-4 text-[var(--color-foreground)]">User Status Overview</h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 flex-1">
-              {userStatusCards.map((item, index) => {
-                const Icon = item.icon;
-
-                return (
-                  <Card
-                    key={index}
-                    className={`cursor-pointer border-[var(--color-border)] ${item.bg}
-            hover:scale-[1.02] hover:shadow-md transition-all duration-300`}
-                  >
-                    <CardContent className="p-6 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-[var(--color-muted-foreground)]">{item.title}</p>
-                        <p className="text-4xl font-bold mt-2">{item.count}</p>
-                      </div>
-
-                      <div className="p-4 rounded-full bg-white/60 dark:bg-black/30">
-                        <Icon className={`w-7 h-7 ${item.color}`} />
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            <UserStatusLoop
+              total={totalUsers}
+              active={activeCount}
+              inactive={inactiveCount}
+              onLeave={onLeaveCount}
+              suspended={suspendedCount}
+            />
           </div>
 
           {/* RIGHT SIDE — RECENT USERS */}
